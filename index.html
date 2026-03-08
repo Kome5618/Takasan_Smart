@@ -171,7 +171,7 @@
     button.choice,
     .start-btn,
     .threads-btn,
-    .save-btn,
+    .image-btn,
     .restart-btn,
     .link-btn{
       width:100%;
@@ -213,7 +213,7 @@
       display:block;
     }
 
-    .save-btn{
+    .image-btn{
       background:#ffffff;
       color:var(--text);
       border:1px solid var(--border);
@@ -371,11 +371,55 @@
       max-width:760px;
     }
 
-    .result-card-capture .capture-footer{
-      margin-top:60px;
-      font-size:30px;
-      color:#666674;
-      font-weight:700;
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.8);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      padding:20px;
+    }
+
+    .overlay.active{
+      display:flex;
+    }
+
+    .overlay-card{
+      width:min(92vw,520px);
+      background:#ffffff;
+      border-radius:24px;
+      padding:16px;
+      text-align:center;
+    }
+
+    .overlay-card img{
+      width:100%;
+      border-radius:16px;
+      display:block;
+    }
+
+    .overlay-text{
+      margin-top:14px;
+      font-size:16px;
+      line-height:1.7;
+      color:#333;
+      white-space:pre-line;
+    }
+
+    .overlay-close{
+      margin-top:14px;
+      width:100%;
+      border:none;
+      border-radius:16px;
+      padding:14px 16px;
+      background:#111;
+      color:#fff;
+      font-family:var(--font);
+      font-size:18px;
+      font-weight:800;
+      cursor:pointer;
     }
 
     @media (max-width:640px){
@@ -400,7 +444,7 @@
       button.choice,
       .start-btn,
       .threads-btn,
-      .save-btn,
+      .image-btn,
       .restart-btn{
         font-size:21px;
       }
@@ -463,23 +507,31 @@
         <div class="result-body" id="resultBody"></div>
         <div class="result-actions">
           <button class="threads-btn" id="openThreadsBtn">Threadsを開く</button>
-          <button class="save-btn" id="saveImageBtn">診断結果画像を保存</button>
+          <button class="image-btn" id="showImageBtn">画像を表示（長押しで保存）</button>
           <button class="restart-btn" id="restartBtn">もう一度診断する</button>
         </div>
         <div class="threads-link-wrap">
           <div class="threads-note">Threadsはこちら</div>
           <a class="link-btn" href="https://www.threads.net/@takasan_smart" target="_blank" rel="noopener noreferrer">@takasan_smart</a>
         </div>
-        <div class="small">画像付き投稿は
+        <div class="small">画像を投稿するなら
 先に画像を保存してから
-Threadsに貼り付けてください</div>
+Threadsに貼り付けてね</div>
       </div>
     </section>
   </div>
 
+  <div class="overlay" id="imageOverlay">
+    <div class="overlay-card">
+      <img id="overlayImage" alt="診断結果画像" />
+      <div class="overlay-text">画像を長押しして保存してね</div>
+      <button class="overlay-close" id="closeOverlayBtn">閉じる</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    const TAKASAN_ICON_URL = "./takasan.icon.JPG";
+    const TAKASAN_ICON_URL = "./takasan.icon.jpg";
 
     const questions = [
       "人にどう思われるかより\n自分がどう思うかを\n大事にしている？",
@@ -548,7 +600,11 @@ Threadsに貼り付けてください</div>
     const resultBody = document.getElementById("resultBody");
     const openThreadsBtn = document.getElementById("openThreadsBtn");
     const restartBtn = document.getElementById("restartBtn");
-    const saveImageBtn = document.getElementById("saveImageBtn");
+    const showImageBtn = document.getElementById("showImageBtn");
+
+    const imageOverlay = document.getElementById("imageOverlay");
+    const overlayImage = document.getElementById("overlayImage");
+    const closeOverlayBtn = document.getElementById("closeOverlayBtn");
 
     let currentQuestion = 0;
     let answers = [];
@@ -608,6 +664,40 @@ Threadsに貼り付けてください</div>
       showScreen(resultScreen);
     }
 
+    async function buildResultImageDataUrl() {
+      const result = calculateResult(answers);
+
+      const capture = document.createElement("div");
+      capture.className = "result-card-capture";
+      capture.innerHTML = `
+        <div class="capture-icon">
+          <img src="${TAKASAN_ICON_URL}" alt="タカさん">
+        </div>
+        <div class="capture-title">${result.title}</div>
+        <div class="capture-score">
+          <div class="label">かしこい女度</div>
+          <div class="value">${result.score}</div>
+        </div>
+        <div class="capture-body">${result.text}</div>
+      `;
+
+      capture.style.position = "fixed";
+      capture.style.left = "-99999px";
+      capture.style.top = "0";
+      document.body.appendChild(capture);
+
+      try {
+        const canvas = await window.html2canvas(capture, {
+          backgroundColor: "#ead7f2",
+          scale: 2,
+          useCORS: true
+        });
+        return canvas.toDataURL("image/png");
+      } finally {
+        document.body.removeChild(capture);
+      }
+    }
+
     startBtn.addEventListener("click", () => {
       currentQuestion = 0;
       answers = [];
@@ -647,61 +737,25 @@ by @takasan_smart`;
       window.location.href = threadsUrl;
     });
 
-    saveImageBtn.addEventListener("click", async () => {
-      const result = calculateResult(answers);
-
-      const capture = document.createElement("div");
-      capture.className = "result-card-capture";
-      capture.innerHTML = `
-        <div class="capture-icon">
-          <img src="${TAKASAN_ICON_URL}" alt="タカさん">
-        </div>
-        <div class="capture-title">${result.title}</div>
-        <div class="capture-score">
-          <div class="label">かしこい女度</div>
-          <div class="value">${result.score}</div>
-        </div>
-        <div class="capture-body">${result.text}</div>
-      `;
-
-      capture.style.position = "fixed";
-      capture.style.left = "-99999px";
-      capture.style.top = "0";
-      document.body.appendChild(capture);
-
+    showImageBtn.addEventListener("click", async () => {
       try {
-        const canvas = await window.html2canvas(capture, {
-          backgroundColor: "#ead7f2",
-          scale: 2,
-          useCORS: true
-        });
-
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-
-        if (!blob) {
-          throw new Error("blob生成失敗");
-        }
-
-        const file = new File([blob], "takasan-result.png", { type: "image/png" });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "診断結果画像",
-            text: "診断結果画像"
-          });
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "takasan-result.png";
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 3000);
-        }
+        const dataUrl = await buildResultImageDataUrl();
+        overlayImage.src = dataUrl;
+        imageOverlay.classList.add("active");
       } catch (e) {
-        alert("画像保存に失敗しました。");
-      } finally {
-        document.body.removeChild(capture);
+        alert("画像表示に失敗しました。");
+      }
+    });
+
+    closeOverlayBtn.addEventListener("click", () => {
+      imageOverlay.classList.remove("active");
+      overlayImage.src = "";
+    });
+
+    imageOverlay.addEventListener("click", (e) => {
+      if (e.target === imageOverlay) {
+        imageOverlay.classList.remove("active");
+        overlayImage.src = "";
       }
     });
   </script>
