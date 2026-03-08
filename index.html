@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>かしこい女度チェック｜自分軸バージョン</title>
+  <style>
+    :root{
+      --bg:#f3eef9;
+      --text:#2f2f35;
+      --subtext:#666674;
+      --card:#ead7f2;
+      --border:rgba(0,0,0,0.08);
+      --shadow:0 10px 30px rgba(0,0,0,0.06);
+      --yes:#7c5cff;
+      --no:#ff5fa2;
+      --accent:#6e57f5;
+      --button-text:#ffffff;
+      --maxw:560px;
+      --font:"Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+    }
+
+    *{
+      box-sizing:border-box;
+    }
+
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--font);
+      min-height:100vh;
+    }
+
+    .app{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px 16px;
+    }
+
+    .screen{
+      width:100%;
+      max-width:var(--maxw);
+      min-height:720px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:32px;
+      box-shadow:var(--shadow);
+      padding:28px 22px 24px;
+      position:relative;
+      overflow:hidden;
+      display:none;
+    }
+
+    .screen.active{
+      display:block;
+    }
+
+    .content{
+      position:relative;
+      z-index:1;
+      display:flex;
+      flex-direction:column;
+      min-height:100%;
+    }
+
+    .hero-icon{
+      display:flex;
+      justify-content:center;
+      margin-bottom:20px;
+    }
+
+    .hero-icon img{
+      width:190px;
+      max-width:52vw;
+      user-select:none;
+      -webkit-user-drag:none;
+      display:block;
+    }
+
+    .bg-icon{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      pointer-events:none;
+      z-index:0;
+      padding-top:170px;
+    }
+
+    .bg-icon img{
+      width:58%;
+      max-width:300px;
+      opacity:0.18;
+      filter:saturate(0.95);
+      user-select:none;
+      -webkit-user-drag:none;
+      display:block;
+    }
+
+    .top-label{
+      text-align:center;
+      color:var(--subtext);
+      font-weight:700;
+      letter-spacing:0.08em;
+      font-size:14px;
+      margin-bottom:18px;
+    }
+
+    .title{
+      text-align:center;
+      font-size:clamp(28px,4vw,42px);
+      line-height:1.28;
+      font-weight:800;
+      margin:8px 0 20px;
+      color:var(--text);
+    }
+
+    .desc{
+      text-align:center;
+      color:var(--subtext);
+      line-height:1.9;
+      font-size:18px;
+      margin:8px 0 28px;
+      white-space:pre-line;
+    }
+
+    .progress-wrap{
+      margin:6px 0 26px;
+    }
+
+    .progress{
+      width:100%;
+      height:8px;
+      border-radius:999px;
+      background:#e6e3ef;
+      overflow:hidden;
+    }
+
+    .progress-bar{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#7c5cff 0%,#ff5fa2 100%);
+      transition:width 0.25s ease;
+    }
+
+    .question{
+      text-align:center;
+      font-size:clamp(20px,2.8vw,28px);
+      line-height:1.55;
+      font-weight:800;
+      white-space:pre-line;
+      margin:90px 0 40px;
+      min-height:240px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .choices{
+      margin-top:auto;
+      display:grid;
+      gap:24px;
+      padding-top:20px;
+    }
+
+    button.choice,
+    .start-btn,
+    .threads-btn,
+    .save-btn,
+    .restart-btn,
+    .link-btn{
+      width:100%;
+      border:none;
+      border-radius:22px;
+      padding:18px 20px;
+      font-family:var(--font);
+      font-size:24px;
+      font-weight:800;
+      cursor:pointer;
+      transition:transform 0.15s ease,opacity 0.2s ease,box-shadow 0.2s ease;
+      box-shadow:0 8px 18px rgba(0,0,0,0.08);
+    }
+
+    button:active,
+    a.link-btn:active{
+      transform:scale(0.97);
+    }
+
+    .choice.yes{
+      background:linear-gradient(90deg,#6e57f5 0%,#8673ff 100%);
+      color:var(--button-text);
+    }
+
+    .choice.no{
+      background:linear-gradient(90deg,#f45d9d 0%,#f77ab0 100%);
+      color:var(--button-text);
+    }
+
+    .start-btn,
+    .threads-btn{
+      background:linear-gradient(90deg,#7c5cff 0%,#ff5fa2 100%);
+      color:#fff;
+    }
+
+    .start-btn{
+      max-width:320px;
+      margin:8px auto 0;
+      display:block;
+    }
+
+    .save-btn{
+      background:#ffffff;
+      color:var(--text);
+      border:1px solid var(--border);
+      box-shadow:none;
+    }
+
+    .restart-btn{
+      background:#f3f3f8;
+      color:var(--text);
+      box-shadow:none;
+      border:1px solid var(--border);
+    }
+
+    .result-top{
+      text-align:center;
+      margin-bottom:16px;
+    }
+
+    .result-top img{
+      width:152px;
+      max-width:40vw;
+      display:block;
+      margin:0 auto;
+    }
+
+    .result-type{
+      text-align:center;
+      font-size:clamp(30px,4.2vw,44px);
+      font-weight:900;
+      line-height:1.25;
+      margin-top:6px;
+      white-space:pre-line;
+    }
+
+    .score{
+      text-align:center;
+      margin:18px 0 24px;
+    }
+
+    .score-label{
+      color:var(--subtext);
+      font-size:18px;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+
+    .score-value{
+      font-size:44px;
+      font-weight:900;
+      color:var(--accent);
+    }
+
+    .result-body{
+      text-align:center;
+      font-size:22px;
+      line-height:1.8;
+      margin:16px 0 28px;
+    }
+
+    .result-actions{
+      display:grid;
+      gap:14px;
+      margin-top:8px;
+    }
+
+    .threads-link-wrap{
+      margin-top:18px;
+      text-align:center;
+    }
+
+    .threads-note{
+      color:var(--subtext);
+      font-size:16px;
+      margin-bottom:10px;
+    }
+
+    .link-btn{
+      display:inline-block;
+      text-decoration:none;
+      background:#111111;
+      color:#ffffff;
+      padding:14px 18px;
+      width:auto;
+      min-width:240px;
+      text-align:center;
+      font-size:20px;
+      border-radius:18px;
+    }
+
+    .small{
+      color:var(--subtext);
+      font-size:14px;
+      line-height:1.7;
+      text-align:center;
+      margin-top:10px;
+      white-space:pre-line;
+    }
+
+    .result-card-capture{
+      background:#ead7f2;
+      color:#2f2f35;
+      width:1000px;
+      min-height:1400px;
+      padding:70px 80px 90px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+    }
+
+    .result-card-capture .capture-icon{
+      margin-top:10px;
+      margin-bottom:55px;
+    }
+
+    .result-card-capture .capture-icon img{
+      width:300px;
+      display:block;
+    }
+
+    .result-card-capture .capture-title{
+      text-align:center;
+      font-size:86px;
+      line-height:1.1;
+      font-weight:900;
+      letter-spacing:-0.02em;
+      margin-bottom:46px;
+    }
+
+    .result-card-capture .capture-score{
+      text-align:center;
+      margin-bottom:60px;
+    }
+
+    .result-card-capture .capture-score .label{
+      font-size:44px;
+      color:#666674;
+      font-weight:800;
+      margin-bottom:18px;
+    }
+
+    .result-card-capture .capture-score .value{
+      font-size:104px;
+      line-height:1;
+      font-weight:900;
+      color:#6e57f5;
+    }
+
+    .result-card-capture .capture-body{
+      text-align:center;
+      font-size:44px;
+      line-height:1.8;
+      white-space:pre-line;
+      max-width:760px;
+    }
+
+    .result-card-capture .capture-footer{
+      margin-top:60px;
+      font-size:30px;
+      color:#666674;
+      font-weight:700;
+    }
+
+    @media (max-width:640px){
+      .screen{
+        min-height:100dvh;
+        border-radius:0;
+        border:none;
+        box-shadow:none;
+        padding:22px 18px 24px;
+      }
+
+      .app{
+        padding:0;
+      }
+
+      .question{
+        font-size:22px;
+        margin:90px 0 36px;
+        min-height:220px;
+      }
+
+      button.choice,
+      .start-btn,
+      .threads-btn,
+      .save-btn,
+      .restart-btn{
+        font-size:21px;
+      }
+
+      .desc{
+        font-size:17px;
+      }
+
+      .result-body{
+        font-size:20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="screen active" id="start-screen">
+      <div class="content">
+        <div class="hero-icon">
+          <img id="mainIcon" alt="タカさんアイコン" />
+        </div>
+        <h1 class="title">かしこい女度チェック<br>自分軸バージョン</h1>
+        <div class="desc">10個の質問で
+タカさん流
+かしこい女度を
+診断します</div>
+        <button class="start-btn" id="startBtn">診断スタート</button>
+      </div>
+    </section>
+
+    <section class="screen" id="question-screen">
+      <div class="bg-icon">
+        <img id="bgIcon" alt="背景タカさんアイコン" />
+      </div>
+      <div class="content">
+        <div class="top-label" id="qCounter">QUESTION 1 / 10</div>
+        <div class="progress-wrap">
+          <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+        <div class="question" id="questionText"></div>
+        <div class="choices">
+          <button class="choice yes" data-answer="yes">Yes（あてはまる）</button>
+          <button class="choice no" data-answer="no">No（あてはまらない）</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="result-screen">
+      <div class="content">
+        <div class="result-top">
+          <img id="resultIcon" alt="タカさんアイコン" />
+        </div>
+        <div class="result-type" id="resultType"></div>
+        <div class="score">
+          <div class="score-label">かしこい女度</div>
+          <div class="score-value" id="resultScore"></div>
+        </div>
+        <div class="result-body" id="resultBody"></div>
+        <div class="result-actions">
+          <button class="threads-btn" id="openThreadsBtn">Threadsを開く</button>
+          <button class="save-btn" id="saveImageBtn">診断結果画像を保存</button>
+          <button class="restart-btn" id="restartBtn">もう一度診断する</button>
+        </div>
+        <div class="threads-link-wrap">
+          <div class="threads-note">Threadsはこちら</div>
+          <a class="link-btn" href="https://www.threads.net/@takasan_smart" target="_blank" rel="noopener noreferrer">@takasan_smart</a>
+        </div>
+        <div class="small">画像付き投稿は
+先に画像を保存してから
+Threadsに貼り付けてください</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const TAKASAN_ICON_URL = "./takasan.icon.JPG";
+
+    const questions = [
+      "人にどう思われるかより\n自分がどう思うかを\n大事にしている？",
+      "嫌なことは\n無理して\n我慢し続ける必要は\nないと思う？",
+      "周りがみんな\n同じことをしていても\n自分が違うと思えば\n流されない？",
+      "失敗しても\n「経験が増えた」と\n考えられる？",
+      "人にどう評価されるかより\n自分が納得できるかを\n大事にしている？",
+      "嫌な感情に\nずっと引きずられるより\n気持ちを切り替えられる？",
+      "人の期待より\n自分の人生を\n優先していいと\n思う？",
+      "「NO」と言うことは\n悪いことでは\nないと思う？",
+      "人と比べても\n意味はないと\n思う？",
+      "自分の人生は\n自分で\n決めていいと\n思う？"
+    ];
+
+    const axisMap = ["A","A","B","B","C","C","D","D","E","E"];
+
+    const results = {
+      queen: {
+        4: { title: "女王タイプ Lv4", text: "あなたはかなり自分軸が強い女性。\n周りの空気より\n自分の感覚を信じて\n行動できるタイプです。" },
+        3: { title: "女王タイプ Lv3", text: "基本は自分軸。\nでも周りも見れる\nバランス型。\nかなり賢いタイプです。" },
+        2: { title: "女王タイプ Lv2", text: "自分軸はあるけど\nまだ揺れる時もある。\nこれからどんどん\n強くなるタイプ。" },
+        1: { title: "女王タイプ Lv1", text: "本来の強さはある。\nまだ表に出てないだけ。" }
+      },
+      self: {
+        4: { title: "自分軸タイプ Lv4", text: "自分の人生を\n自分で選べる女性。\nかなり安定しています。" },
+        3: { title: "自分軸タイプ Lv3", text: "基本は自分軸。\nでも優しさもあるタイプ。" },
+        2: { title: "自分軸タイプ Lv2", text: "少しずつ\n自分の軸が\n育っている段階。" },
+        1: { title: "自分軸タイプ Lv1", text: "これから\n自分軸を育てる\n段階です。" }
+      },
+      intuition: {
+        4: { title: "直感タイプ Lv4", text: "感覚が鋭いタイプ。\n自分の内側の声を\nよく聞けています。" },
+        3: { title: "直感タイプ Lv3", text: "本当は分かっているタイプ。\n迷いが少しあるだけ。" },
+        2: { title: "直感タイプ Lv2", text: "直感はある。\n自信がまだ少ないだけ。" },
+        1: { title: "直感タイプ Lv1", text: "まだ感覚を\n信じる練習中。" }
+      },
+      kind: {
+        4: { title: "優しすぎタイプ Lv4", text: "人に優しい。\nでも自分を大切にすることも\n忘れないで。" },
+        3: { title: "優しすぎタイプ Lv3", text: "人を優先しやすいタイプ。\nでも強さもあります。" },
+        2: { title: "優しすぎタイプ Lv2", text: "少し我慢しすぎる\n傾向あり。" },
+        1: { title: "優しすぎタイプ Lv1", text: "自分より人を\n優先しすぎるタイプ。" }
+      },
+      lost: {
+        4: { title: "迷子タイプ Lv4", text: "周りに影響されやすい。\nでも変わる力があります。" },
+        3: { title: "迷子タイプ Lv3", text: "まだ自分軸を\n探している途中。" },
+        2: { title: "迷子タイプ Lv2", text: "周りに流されやすい段階。" },
+        1: { title: "迷子タイプ Lv1", text: "ここから\n自分の人生を\n取り戻すスタート。" }
+      }
+    };
+
+    const startScreen = document.getElementById("start-screen");
+    const questionScreen = document.getElementById("question-screen");
+    const resultScreen = document.getElementById("result-screen");
+
+    const mainIcon = document.getElementById("mainIcon");
+    const bgIcon = document.getElementById("bgIcon");
+    const resultIcon = document.getElementById("resultIcon");
+
+    const startBtn = document.getElementById("startBtn");
+    const qCounter = document.getElementById("qCounter");
+    const progressBar = document.getElementById("progressBar");
+    const questionText = document.getElementById("questionText");
+    const choiceButtons = document.querySelectorAll(".choice");
+
+    const resultType = document.getElementById("resultType");
+    const resultScore = document.getElementById("resultScore");
+    const resultBody = document.getElementById("resultBody");
+    const openThreadsBtn = document.getElementById("openThreadsBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const saveImageBtn = document.getElementById("saveImageBtn");
+
+    let currentQuestion = 0;
+    let answers = [];
+
+    [mainIcon, bgIcon, resultIcon].forEach(img => {
+      if (img) img.src = TAKASAN_ICON_URL;
+    });
+
+    function showScreen(screen) {
+      [startScreen, questionScreen, resultScreen].forEach(s => s.classList.remove("active"));
+      screen.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderQuestion() {
+      const index = currentQuestion;
+      qCounter.textContent = `QUESTION ${index + 1} / ${questions.length}`;
+      questionText.textContent = questions[index];
+      progressBar.style.width = `${(index / questions.length) * 100}%`;
+    }
+
+    function calculateResult(answerList) {
+      const axisScore = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+      let total = 0;
+
+      answerList.forEach((a, i) => {
+        if (a) {
+          axisScore[axisMap[i]]++;
+          total++;
+        }
+      });
+
+      let level = 1;
+      if (total >= 9) level = 4;
+      else if (total >= 7) level = 3;
+      else if (total >= 5) level = 2;
+
+      let type = "self";
+      if (axisScore.A >= 2 && axisScore.B >= 2) type = "queen";
+      else if (axisScore.A >= 2 || axisScore.E >= 2) type = "self";
+      else if (axisScore.C >= 2) type = "intuition";
+      else if (axisScore.B <= 0 && axisScore.E <= 0) type = "kind";
+      else type = "lost";
+
+      return {
+        ...results[type][level],
+        score: `${Math.round((total / questions.length) * 100)}%`
+      };
+    }
+
+    function showResult() {
+      const result = calculateResult(answers);
+      resultType.innerText = result.title;
+      resultScore.innerText = result.score;
+      resultBody.innerHTML = result.text.replace(/\n/g, "<br>");
+      progressBar.style.width = "100%";
+      showScreen(resultScreen);
+    }
+
+    startBtn.addEventListener("click", () => {
+      currentQuestion = 0;
+      answers = [];
+      showScreen(questionScreen);
+      renderQuestion();
+    });
+
+    choiceButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const ans = btn.dataset.answer === "yes";
+        answers.push(ans);
+        currentQuestion++;
+
+        if (currentQuestion >= questions.length) {
+          showResult();
+        } else {
+          renderQuestion();
+        }
+      });
+    });
+
+    restartBtn.addEventListener("click", () => {
+      currentQuestion = 0;
+      answers = [];
+      showScreen(startScreen);
+    });
+
+    openThreadsBtn.addEventListener("click", () => {
+      const result = calculateResult(answers);
+      const text =
+`私の診断結果は
+「${result.title}」
+かしこい女度 ${result.score}
+by @takasan_smart`;
+
+      const threadsUrl = "https://www.threads.net/intent/post?text=" + encodeURIComponent(text);
+      window.location.href = threadsUrl;
+    });
+
+    saveImageBtn.addEventListener("click", async () => {
+      const result = calculateResult(answers);
+
+      const capture = document.createElement("div");
+      capture.className = "result-card-capture";
+      capture.innerHTML = `
+        <div class="capture-icon">
+          <img src="${TAKASAN_ICON_URL}" alt="タカさん">
+        </div>
+        <div class="capture-title">${result.title}</div>
+        <div class="capture-score">
+          <div class="label">かしこい女度</div>
+          <div class="value">${result.score}</div>
+        </div>
+        <div class="capture-body">${result.text}</div>
+      `;
+
+      capture.style.position = "fixed";
+      capture.style.left = "-99999px";
+      capture.style.top = "0";
+      document.body.appendChild(capture);
+
+      try {
+        const canvas = await window.html2canvas(capture, {
+          backgroundColor: "#ead7f2",
+          scale: 2,
+          useCORS: true
+        });
+
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+
+        if (!blob) {
+          throw new Error("blob生成失敗");
+        }
+
+        const file = new File([blob], "takasan-result.png", { type: "image/png" });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "診断結果画像",
+            text: "診断結果画像"
+          });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "takasan-result.png";
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 3000);
+        }
+      } catch (e) {
+        alert("画像保存に失敗しました。");
+      } finally {
+        document.body.removeChild(capture);
+      }
+    });
+  </script>
+</body>
+</html>
